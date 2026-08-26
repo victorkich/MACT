@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Action-Conditioned Transformers for Decentralized Multi-Agent World Models</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>" />
+  <meta name="description" content="MACT is a decentralized transformer world model for multi-agent RL with linear complexity in team size, trained with an action-conditioned contrastive objective that predicts future team-conditioned latents." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Base ──────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; color-scheme: light; }
+
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      line-height: 1.65;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: #1d4ed8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    img, video { display: block; max-width: 100%; height: auto; }
+
+    /* ── Layout ────────────────────────────────────────────────────────────── */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    .container-wide { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    section { padding: 64px 0; border-top: 1px solid #e5e7eb; }
+    section:first-of-type { border-top: none; }
+
+    h2 { font-size: 1.6rem; font-weight: 600; line-height: 1.3; margin-bottom: 14px; color: #111; }
+    h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 8px; color: #111; }
+
+    p { color: #444; margin-bottom: 14px; text-align: justify; }
+    p:last-child { margin-bottom: 0; }
+
+    code {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.9em; background: #f3f4f6; padding: 1px 5px; border-radius: 4px;
+      color: #1f2937;
+    }
+
+    .section-label {
+      display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #6b7280; margin-bottom: 10px;
+    }
+
+    /* ── Nav ───────────────────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+      border-bottom: 1px solid #e5e7eb; padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto; display: flex; align-items: center;
+      justify-content: space-between; height: 52px;
+    }
+    .nav-brand { font-weight: 700; letter-spacing: -0.01em; color: #111; }
+    .nav-links { display: flex; gap: 20px; list-style: none; }
+    .nav-links a { color: #4b5563; font-size: 13.5px; font-weight: 500; }
+    .nav-links a:hover { color: #1d4ed8; text-decoration: none; }
+    @media (max-width: 700px) { .nav-links { display: none; } }
+
+    /* ── Hero ──────────────────────────────────────────────────────────────── */
+    #hero { padding-top: 54px; padding-bottom: 60px; text-align: center; }
+
+    .venue-tag {
+      display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: #15803d; background: #f0fdf4;
+      border: 1px solid #bbf7d0; padding: 4px 12px; border-radius: 999px;
+      margin-bottom: 22px;
+    }
+
+    .paper-title {
+      font-size: 2.15rem; font-weight: 700; line-height: 1.22; letter-spacing: -0.02em;
+      color: #0f172a; max-width: 820px; margin: 0 auto 18px;
+    }
+    @media (max-width: 640px) { .paper-title { font-size: 1.6rem; } }
+
+    .authors { font-size: 15px; color: #374151; margin-bottom: 6px; }
+    .authors span::after { content: " ·"; color: #aaa; }
+    .authors span:last-child::after { content: ""; }
+    .affil { font-size: 13.5px; color: #6b7280; margin-bottom: 26px; }
+    .authors sup, .affil sup { font-size: 0.72em; vertical-align: super; line-height: 0; }
+
+    .btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px;
+      border-radius: 6px; font-size: 13.5px; font-weight: 500;
+      border: 1px solid #d1d5db; background: #fff; color: #333;
+      cursor: pointer; text-decoration: none;
+    }
+    .btn:hover { background: #f9fafb; text-decoration: none; }
+    .btn-primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+    .btn-primary:hover { background: #1e40af; }
+    .icon { width: 15px; height: 15px; flex-shrink: 0; }
+
+    .hero-video-wrap { margin: 40px auto 0; max-width: 820px; border-radius: 8px; overflow: hidden; }
+    .hero-video-wrap video { width: 100%; display: block; transition: transform 0.25s ease; }
+
+    .fig-caption {
+      font-size: 13px; color: #6b7280; margin-top: 10px; text-align: center; line-height: 1.5;
+    }
+
+    /* ── Abstract ──────────────────────────────────────────────────────────── */
+    #abstract .abstract-text {
+      font-family: "Source Serif 4", Georgia, serif; font-size: 1.05rem; line-height: 1.85;
+      color: #333; max-width: 760px; margin: 0 auto; text-align: justify;
+    }
+
+    /* ── Method ────────────────────────────────────────────────────────────── */
+    .method-body { margin-bottom: 32px; }
+    .method-body p { font-size: 15px; line-height: 1.75; }
+    .method-body h3 { margin-top: 22px; margin-bottom: 6px; font-size: 15px; }
+
+    .diagram-wrap { margin: 30px 0 0; overflow-x: auto; background: #fff; }
+    .diagram-wrap svg { display: block; width: 100%; height: auto; min-width: 640px; }
+    .diagram-wrap img { display: block; width: 100%; height: auto; min-width: 560px; }
+
+    /* diagram tokens */
+    .d-lbl  { font: 500 12px "Inter", system-ui, sans-serif; fill: #374151; }
+    .d-lbl-s{ font: 500 10.5px "Inter", system-ui, sans-serif; fill: #6b7280; }
+    .d-ttl  { font: 600 12.5px "Inter", system-ui, sans-serif; fill: #111827; }
+    .d-mono { font: 500 11px ui-monospace, Menlo, monospace; fill: #1f2937; }
+    .d-box  { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.1; }
+    .d-box-a{ fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.2; }
+    .d-box-o{ fill: #eef2ff; stroke: #a5b4fc; stroke-width: 1.2; }
+    .d-arrow{ stroke: #94a3b8; stroke-width: 1.3; fill: none; }
+    .d-arrow-a{ stroke: #1d4ed8; stroke-width: 1.5; fill: none; }
+
+    .callout {
+      border-left: 3px solid #1d4ed8; background: #f8faff; padding: 14px 18px;
+      margin: 26px 0 0; border-radius: 0 6px 6px 0;
+    }
+    .callout p { font-size: 14.5px; margin: 0; text-align: left; color: #374151; }
+
+    .note {
+      border-left: 3px solid #d97706; background: #fffbeb; padding: 14px 18px;
+      margin: 22px 0 0; border-radius: 0 6px 6px 0;
+    }
+    .note p { font-size: 14px; margin: 0; text-align: left; color: #78350f; }
+
+    /* ── Benchmark ─────────────────────────────────────────────────────────── */
+    .map-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+      gap: 0; border-top: 1px solid #e5e7eb; margin-top: 26px;
+    }
+    .map-cell { padding: 13px 14px; border-bottom: 1px solid #e5e7eb; }
+    .map-cell .mn {
+      font: 600 13px ui-monospace, Menlo, monospace; color: #111; display: block;
+    }
+    .map-cell .md { font-size: 12.5px; color: #6b7280; line-height: 1.45; }
+
+    /* ── Results ───────────────────────────────────────────────────────────── */
+    .results-table-wrap { overflow-x: auto; margin-top: 26px; }
+    .results-table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 720px; }
+    .results-table th, .results-table td { padding: 7px 10px; text-align: center; white-space: nowrap; }
+    .results-table thead th {
+      border-bottom: 1.5px solid #cbd5e1; font-weight: 600; color: #374151; font-size: 12.5px;
+    }
+    .results-table tbody td { border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .results-table tbody tr:hover td { background: #fafbfc; }
+    .results-table td:first-child, .results-table th:first-child {
+      text-align: left; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px;
+    }
+    .ours-group { background: #eff6ff; color: #1e40af !important; }
+    .ours-col { background: #f5f9ff; font-weight: 600; color: #1e3a8a !important; }
+    .ours-pill {
+      display: inline-block; background: #1d4ed8; color: #fff; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 3px;
+      margin-right: 5px; vertical-align: 1px;
+    }
+    .td-best { font-weight: 700; color: #0f172a !important; }
+    .td-second { color: #0f172a !important; background: #f1f5f9; }
+    .td-zero { color: #cbd5e1 !important; }
+    .tr-summary td { border-top: 1.5px solid #cbd5e1; font-weight: 600; color: #111 !important; }
+    .std { color: #9ca3af; font-size: 11.5px; }
+
+    .plot-wrap { margin-top: 30px; }
+    .abl-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 28px;
+    }
+    .abl-cell { margin: 0; }
+    .abl-cell img { width: 100%; height: auto; display: block; }
+    .abl-cell .fig-caption { text-align: left; margin-top: 10px; }
+    @media (max-width: 860px) { .abl-row { grid-template-columns: 1fr; } }
+    .img-full img { width: 100%; }
+
+    /* ── Videos ────────────────────────────────────────────────────────────── */
+    .video-wrap {
+      margin-top: 22px; border: 1px solid #e5e7eb; border-radius: 8px;
+      overflow: hidden; background: #fff;
+    }
+    .video-wrap video { width: 100%; display: block; transition: transform 0.25s ease; }
+
+    /* ── BibTeX ────────────────────────────────────────────────────────────── */
+    pre.bibtex {
+      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 16px 18px; overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; color: #1f2937;
+      margin-top: 18px;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid #e5e7eb; padding: 34px 24px 44px; text-align: center;
+      font-size: 13px; color: #6b7280;
+    }
+    footer p { text-align: center; color: #6b7280; margin-bottom: 6px; }
+
+    /* ── Reveal ────────────────────────────────────────────────────────────── */
+    .reveal { opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-brand">MACT</span>
+    <ul class="nav-links">
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#benchmark">Benchmark</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#videos">Videos</a></li>
+      <li><a href="#ablations">Ablations</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+
+    <div class="venue-tag">TMLR · Accepted</div>
+
+    <h1 class="paper-title reveal">
+      Action-Conditioned Transformers for<br />Decentralized Multi-Agent World Models
+    </h1>
+
+    <div class="authors reveal">
+      <span>Victor A. Kich<sup>1</sup></span>
+      <span>Junior C. de Jesus<sup>2</sup></span>
+      <span>Satoshi Yamamori<sup>1</sup></span>
+      <span>Jun Morimoto<sup>1</sup></span>
+    </div>
+    <div class="affil reveal">
+      <sup>1</sup>Department of Informatics, Kyoto University &nbsp;&middot;&nbsp;
+      <sup>2</sup>Department of Computer Science, Federal University of Rio Grande
+    </div>
+
+    <div class="btn-row reveal">
+      <a href="assets/paper/mact_tmlr2026.pdf" class="btn btn-primary" target="_blank" rel="noopener">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Paper
+      </a>
+      <a href="https://openreview.net/forum?id=99nyrFfTJf" class="btn" target="_blank" rel="noopener">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        OpenReview
+      </a>
+      <a href="#videos" class="btn">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="23 7 16 12 23 17 23 7"/>
+          <rect x="1" y="5" width="15" height="14" rx="2"/>
+        </svg>
+        Videos
+      </a>
+      <a href="https://github.com/victorkich/MACT" class="btn" target="_blank" rel="noopener">
+        <svg class="icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+        </svg>
+        Code
+      </a>
+    </div>
+
+    <div class="hero-video-wrap reveal">
+      <video controls muted loop playsinline webkit-playsinline preload="metadata"
+             poster="assets/videos/hero_poster.jpg">
+        <source src="assets/videos/hero_sequence.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="fig-caption reveal" style="max-width:640px; margin:10px auto 0;">
+      MACT across five SMAC maps, captured from the StarCraft II engine. The coloured rings are the
+      world model's own prediction of where each enemy will be, one to five steps ahead, and the bars
+      below show how close each of those predictions landed against a baseline that assumes nothing
+      moves. Every clip is a winning episode.
+    </p>
+
+  </div>
+</section>
+
+<!-- ABSTRACT -->
+<section id="abstract">
+  <div class="container">
+    <span class="section-label">Abstract</span>
+    <p class="abstract-text reveal">
+      Multi-agent reinforcement learning (MARL) has achieved strong results on large-scale decision
+      making, yet most methods are model-free, limiting sample efficiency and making coordination harder
+      as teammates' policies evolve during training. Model-based reinforcement learning can reduce data
+      usage, but planning and search scale poorly with joint action spaces. We introduce MACT, a
+      decentralized action-conditioned Transformer world model for long-horizon cooperative control. Each
+      agent processes discretized observation-action tokens with a shared Transformer, while a single
+      cross-agent Perceiver step provides global context under centralized training and decentralized
+      execution. MACT targets long-horizon coordination by coupling Perceiver-derived global context with
+      an action-conditioned contrastive objective that predicts future latent representations over a short
+      horizon conditioned on planned actions. On the StarCraft Multi-Agent Challenge, MACT achieves the
+      strongest aggregate performance among 6 model-free and model-based baselines under matched low-data
+      training budgets. Across 12 maps, including 2 SuperHard scenarios, MACT attains the best mean and
+      median win rates, and ablations show that multi-step prediction and per-agent action conditioning
+      are central to its gains.
+    </p>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section id="method">
+  <div class="container">
+    <span class="section-label">Method</span>
+    <h2 class="reveal">A decentralized world model that predicts the future it plans for</h2>
+
+    <div class="method-body reveal">
+      <p>
+        Prior multi-agent world models (MAMBA, MARIE, MATWM) are supervised almost
+        entirely by <em>one-step reconstruction</em>, which biases representations toward short-term
+        correlations, so rollouts drift. That is exactly where cooperation lives: focus fire pays off
+        only after several agents commit to the same target across multiple steps.
+      </p>
+      <p>
+        MACT keeps the scalable pipeline and changes what the model is asked to predict. Each agent
+        must predict, in latent space, <strong>what its team-conditioned context will look like
+        <em>K</em> steps ahead, given the actions it intends to take</strong>.
+      </p>
+    </div>
+
+    <h3 class="reveal">Architecture</h3>
+    <div class="diagram-wrap reveal">
+      <img src="assets/diagrams/ac_cpc.svg" loading="lazy"
+           alt="World-model training in MACT: a VQ encoder tokenizes observations, a shared per-agent transformer produces local latents with one-step heads, and the AC-CPC predictor is contrasted against projected Perceiver targets from augmented future observations." />
+    </div>
+    <p class="fig-caption reveal">
+      World-model training. Observations are tokenized by a VQ encoder, a shared per-agent
+      transformer produces local latents and one-step heads, and the AC-CPC predictor is
+      contrasted against projected Perceiver targets computed from augmented future observations.
+    </p>
+
+    <div class="method-body reveal" style="margin-top:34px;">
+      <h3>Action-conditioned contrastive prediction (AC-CPC)</h3>
+      <p>
+        For each horizon <em>k</em> the predictor sees the agent's local latent, its Perceiver
+        context, and the action window it is about to execute, and must predict the projected
+        context <em>k</em> steps later. The target is a <strong>feature-dropout augmented</strong>
+        view of the future observation, intended to make the target less vulnerable to exact token
+        matching. The ablation below shows how map-dependent that actually is.
+      </p>
+    </div>
+
+    <p class="fig-caption reveal" style="text-align:left;max-width:760px;margin-left:0;">
+      In the figure above, the predictor is conditioned on the agent's <em>own</em> action window:
+      if I do this, in this team context, my future context looks like that.
+    </p>
+
+    <div class="callout reveal">
+      <p>
+        <strong>Why per-agent conditioning?</strong> Team context already lives in the Perceiver
+        latent <code>e</code>. A pooled joint-action summary on top is redundant and
+        identity-agnostic, because it blurs <em>who</em> did what. The ablation below measures this.
+      </p>
+    </div>
+
+    <div class="method-body reveal" style="margin-top:34px;">
+      <h3>Imagination-based actor–critic</h3>
+      <p>
+        After each world-model update the model is frozen and rollouts run in latent space for
+        <em>H</em> steps. Decentralized actors consume decoded observations, and a centralized critic
+        scores the joint latent under CTDE. Gradients never reach the world model. At execution
+        time only the tokenizer and each agent's own actor are needed. No world model, no planner and no search over joint actions.
+      </p>
+    </div>
+
+    <div class="diagram-wrap reveal">
+      <img src="assets/diagrams/imagination.svg" loading="lazy"
+           alt="Imagination: the frozen world model rolls forward in latent space while each agent's actor selects the next action from the decoded observation." />
+    </div>
+    <p class="fig-caption reveal">
+      Behaviour learning. The frozen world model rolls forward in latent space, and each agent's actor
+      picks the next action from its own decoded observation.
+    </p>
+  </div>
+</section>
+
+<!-- BENCHMARK -->
+<section id="benchmark">
+  <div class="container">
+    <span class="section-label">Benchmark</span>
+    <h2 class="reveal">SMAC under a tight data budget</h2>
+    <p class="reveal">
+      Every method is re-run in one harness on a pinned <code>SC2.4.1.2.60604</code> build, with
+      identical per-map step budgets and the same 100-episode greedy evaluation:
+      <strong>50,000 environment frames</strong> on ten maps, 200,000 on <code>3s_vs_5z</code> and
+      the two SuperHard maps.
+    </p>
+
+    <div class="map-grid reveal">
+      <div class="map-cell"><span class="mn">2m_vs_1z</span><span class="md">2 Marines vs 1 Zealot, kiting</span></div>
+      <div class="map-cell"><span class="mn">2s_vs_1sc</span><span class="md">2 Stalkers vs 1 Spine Crawler</span></div>
+      <div class="map-cell"><span class="mn">2s3z</span><span class="md">Mixed Stalkers + Zealots</span></div>
+      <div class="map-cell"><span class="mn">3m</span><span class="md">3 Marines, symmetric</span></div>
+      <div class="map-cell"><span class="mn">3s_vs_3z</span><span class="md">Stalkers vs Zealots, symmetric count</span></div>
+      <div class="map-cell"><span class="mn">3s_vs_4z</span><span class="md">Outnumbered, hard</span></div>
+      <div class="map-cell"><span class="mn">8m</span><span class="md">8 Marines, focus fire at scale</span></div>
+      <div class="map-cell"><span class="mn">MMM</span><span class="md">Heterogeneous: Marines, Marauders, Medivac</span></div>
+      <div class="map-cell"><span class="mn">so_many_baneling</span><span class="md">Splash damage, spacing critical</span></div>
+      <div class="map-cell"><span class="mn">3s_vs_5z</span><span class="md">Heavily outnumbered, 200K steps</span></div>
+      <div class="map-cell"><span class="mn">corridor</span><span class="md">SuperHard, 200K steps</span></div>
+      <div class="map-cell"><span class="mn">6h_vs_8z</span><span class="md">SuperHard, unsolved by every method</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="container">
+    <span class="section-label">Results</span>
+    <h2 class="reveal">Quantitative comparison</h2>
+    <p class="reveal">
+      Under one protocol the ranking changes. MATWM does not reproduce its published strength, and
+      MAMBA is the strongest baseline. MACT still has the highest mean and median across the
+      twelve maps and leads on five, with the largest margins on the coordination-heavy and
+      long-horizon maps. The limits are equally clear: <code>3s_vs_4z</code> stays low for
+      everyone, <code>2s3z</code> favours MBVD, and <code>6h_vs_8z</code> is unsolved by all.
+    </p>
+
+    <div class="plot-wrap reveal">
+      <div class="img-full">
+        <img src="assets/plots/fig_headline.svg" alt="Mean and median win rate across SMAC maps for MACT and five baselines" loading="lazy" />
+      </div>
+      <p class="fig-caption">
+        Aggregate win rate over the twelve maps, coloured by world-model family. MAMBA is the
+        strongest baseline once every method is re-run in the same harness.
+      </p>
+    </div>
+
+    <div class="results-table-wrap reveal">
+      <table class="results-table">
+          <thead>
+          <tr><th>Map</th><th>Steps</th><th class="ours-group"><span class="ours-pill">Ours</span>MACT</th><th>MARIE</th><th>MATWM</th><th>MAMBA</th><th>MBVD</th><th>MAPPO</th><th>MAT</th></tr>
+          </thead>
+          <tbody>
+          <tr><td>2m_vs_1z</td><td>50K</td><td class="ours-col td-best">99.2 <span class="std">1.2</span></td><td>52.0 <span class="std">44.9</span></td><td>58.1 <span class="std">13.2</span></td><td class="td-second">92.0 <span class="std">11.7</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>56.8 <span class="std">16.6</span></td><td>81.0 <span class="std">20.4</span></td></tr>
+          <tr><td>2s_vs_1sc</td><td>50K</td><td class="ours-col">91.9 <span class="std">7.4</span></td><td class="td-second">92.0 <span class="std">7.5</span></td><td class="td-best">96.7 <span class="std">3.1</span></td><td>86.0 <span class="std">13.9</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>60.0 <span class="std">11.4</span></td><td>23.9 <span class="std">13.0</span></td></tr>
+          <tr><td>2s3z</td><td>50K</td><td class="ours-col">35.6 <span class="std">17.4</span></td><td>25.0 <span class="std">11.0</span></td><td>43.9 <span class="std">16.5</span></td><td class="td-second">46.0 <span class="std">12.4</span></td><td class="td-best">65.0 <span class="std">11.5</span></td><td>0.9 <span class="std">0.8</span></td><td>0.4 <span class="std">0.5</span></td></tr>
+          <tr><td>3m</td><td>50K</td><td class="ours-col">91.2 <span class="std">6.2</span></td><td class="td-best">96.5 <span class="std">3.7</span></td><td>79.3 <span class="std">7.7</span></td><td class="td-second">92.0 <span class="std">6.0</span></td><td>43.0 <span class="std">20.6</span></td><td>57.4 <span class="std">11.0</span></td><td>42.0 <span class="std">3.5</span></td></tr>
+          <tr><td>3s_vs_3z</td><td>50K</td><td class="ours-col td-second">82.5 <span class="std">4.7</span></td><td class="td-best">85.0 <span class="std">16.4</span></td><td>23.2 <span class="std">25.3</span></td><td>76.0 <span class="std">18.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>3.6 <span class="std">3.5</span></td><td>1.1 <span class="std">0.7</span></td></tr>
+          <tr><td>3s_vs_4z</td><td>50K</td><td class="ours-col">3.8 <span class="std">5.3</span></td><td class="td-best">9.0 <span class="std">11.1</span></td><td>0.1 <span class="std">0.2</span></td><td class="td-second">5.0 <span class="std">10.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td></tr>
+          <tr><td>8m</td><td>50K</td><td class="ours-col td-best">95.0 <span class="std">5.0</span></td><td>48.5 <span class="std">23.2</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>65.0 <span class="std">12.6</span></td><td class="td-second">74.1 <span class="std">13.6</span></td><td>19.5 <span class="std">5.7</span></td><td>28.2 <span class="std">8.9</span></td></tr>
+          <tr><td>MMM</td><td>50K</td><td class="ours-col td-second">43.3 <span class="std">7.2</span></td><td>23.5 <span class="std">10.7</span></td><td>2.8 <span class="std">4.1</span></td><td class="td-best">60.0 <span class="std">15.8</span></td><td>9.0 <span class="std">3.9</span></td><td>0.8 <span class="std">1.5</span></td><td>0.5 <span class="std">1.0</span></td></tr>
+          <tr><td>so_many_baneling</td><td>50K</td><td class="ours-col td-best">94.2 <span class="std">2.4</span></td><td>56.5 <span class="std">26.6</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-second">77.0 <span class="std">16.0</span></td><td>11.2 <span class="std">3.1</span></td><td>33.5 <span class="std">9.5</span></td><td>32.9 <span class="std">4.2</span></td></tr>
+          <tr><td>3s_vs_5z</td><td>200K</td><td class="ours-col td-best">95.0 <span class="std">3.5</span></td><td class="td-second">66.5 <span class="std">16.4</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>15.0 <span class="std">13.4</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td></tr>
+          <tr><td>corridor</td><td>200K</td><td class="ours-col td-best">77.5 <span class="std">20.9</span></td><td class="td-second">38.8 <span class="std">31.2</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td>10.0 <span class="std">14.1</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td></tr>
+          <tr><td>6h_vs_8z</td><td>200K</td><td class="ours-col td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td><td class="td-zero">0.0 <span class="std">0.0</span></td></tr>
+          <tr class="tr-summary"><td>Mean</td><td></td><td class="ours-col td-best">67.4</td><td>49.4</td><td>25.3</td><td class="td-second">52.0</td><td>16.9</td><td>19.4</td><td>17.5</td></tr>
+          <tr class="tr-summary"><td>Median</td><td></td><td class="ours-col td-best">86.9</td><td>50.2</td><td>1.4</td><td class="td-second">62.5</td><td>0.0</td><td>2.2</td><td>0.8</td></tr>
+          </tbody>
+        </table>
+    </div>
+    <p class="fig-caption reveal">
+      Table 1 of the paper. Mean&plusmn;std win rate (%), smoothed over the last five evaluations.
+      Bold marks the best on each map, grey the second. Every method was re-run in this harness.
+      No number is carried over from another paper.
+    </p>
+
+    <div class="plot-wrap reveal">
+      <div class="img-full">
+        <img src="assets/plots/fig_rliable.svg" loading="lazy"
+             alt="Interquartile-mean win rate with 95% stratified bootstrap confidence intervals for all seven methods over the twelve maps." />
+      </div>
+      <p class="fig-caption">
+        Because single SMAC maps are high variance, aggregate uncertainty is reported with the
+        rliable protocol over all twelve maps. MACT reaches an <strong>IQM of 80.4</strong>,
+        against 60.9 for MAMBA, 52.1 for MARIE, 14.1 for MATWM, 11.3 for MAPPO, 10.0 for MAT and
+        3.8 for MBVD. Probability of improvement is 0.63 over MAMBA and 0.68 over MARIE.
+      </p>
+    </div>
+
+    <div class="plot-wrap reveal">
+      <div class="img-full">
+        <img src="assets/plots/fig_permap.svg" loading="lazy"
+             alt="Learning curves for all seven methods on all twelve maps under the unified protocol." />
+      </div>
+      <p class="fig-caption">
+        Evaluation win rate against environment steps for every method under the unified protocol
+        (mean&plusmn;std over seeds, Gaussian-smoothed).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS -->
+<section id="videos">
+  <div class="container">
+    <span class="section-label">Rollouts</span>
+    <h2 class="reveal">Qualitative comparisons</h2>
+    <p class="reveal">
+      Episodes rolled out from the trained checkpoints, captured from the StarCraft II engine
+      itself. In every clip the learned policy plays red and the built-in AI plays blue. Both
+      methods run through the same evaluation path (tokenizer plus decentralized actor, no world
+      model at test time) on the same pinned <code>SC2.4.1.2.60604</code> build.
+      Every released checkpoint was re-run for 30 evaluation episodes, and Table 1 reports the
+      mean over seeds. Where only one checkpoint survives for a method on a map the seed count
+      is stated, because a single seed cannot show the spread the paper reports.
+    </p>
+
+    <h3 class="reveal" style="margin-top:38px;">8m, focus fire at scale</h3>
+    <p class="reveal">
+      Eight Marines a side. A kill only happens if several agents commit to the same target and
+      hold that commitment for several steps, which is the behaviour the action-conditioned
+      objective is meant to represent.
+    </p>
+    <div class="video-wrap reveal">
+      <video muted loop playsinline webkit-playsinline preload="metadata">
+        <source src="assets/videos/hero_8m.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="fig-caption reveal">
+      MACT on <code>8m</code>, a winning episode. The learned policy plays red, the built-in AI
+      plays blue.
+    </p>
+
+    <h3 class="reveal" style="margin-top:38px;">MMM, the largest margin and the widest spread</h3>
+    <p class="reveal">
+      Heterogeneous teams of Marines, Marauders and a healing Medivac differ in range
+      and role, so the team must commit to a plan that only pays off several steps later. This is
+      also the map with the widest seed spread, and one MAMBA wins outright.
+    </p>
+    <div class="video-wrap reveal">
+      <video muted loop playsinline webkit-playsinline preload="metadata">
+        <source src="assets/videos/cmp_MMM.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="fig-caption reveal" id="cap-mmm">
+      MACT (left) and MARIE (right) on <code>MMM</code>. Across 30 episodes per seed, MACT's two available policies scored <strong>46.7%</strong> and <strong>0.0%</strong>, a
+      mean of <strong>23.4%</strong>, against the paper's 43.3&thinsp;&plusmn;&thinsp;7.2. MARIE scored <strong>6.7%</strong>
+      (paper: 23.5&thinsp;&plusmn;&thinsp;10.7). On this map a run either finds the coordinated behaviour or
+      collapses outright. The clip shows the seed that found it.
+    </p>
+
+    <h3 class="reveal" style="margin-top:38px;">so_many_baneling, spacing under splash damage</h3>
+    <p class="reveal">
+      Banelings detonate on contact and damage everything nearby, so a clumped formation loses instantly.
+      MACT reaches <strong>94.2%</strong> against MARIE's <strong>56.5%</strong>.
+    </p>
+    <div class="video-wrap reveal">
+      <video muted loop playsinline webkit-playsinline preload="metadata">
+        <source src="assets/videos/cmp_smb.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="fig-caption reveal" id="cap-smb">
+      MACT (left) and MARIE (right) on <code>so_many_baneling</code>. Across 30 episodes per seed,
+      MACT's three policies won <strong>100%, 100% and 96.7%</strong>, a mean of <strong>98.9%</strong>,
+      against the paper's 94.2&thinsp;&plusmn;&thinsp;2.4. MARIE's single available policy won
+      <strong>36.7%</strong> (paper: 56.5&thinsp;&plusmn;&thinsp;26.6). This is the cleanest reproduction of the paper's ordering in our set.
+    </p>
+
+    <h3 class="reveal" style="margin-top:38px;">3s_vs_3z, where the methods are comparable</h3>
+    <p class="reveal">
+      Not every map favours MACT. On <code>3s_vs_3z</code> MARIE is slightly ahead (85.0% vs 82.5%), and
+      both are within each other's seed variance. We include it because the honest read of the results is
+      that the advantage is concentrated in coordination-heavy settings rather than uniform across SMAC.
+    </p>
+    <div class="video-wrap reveal">
+      <video muted loop playsinline webkit-playsinline preload="metadata">
+        <source src="assets/videos/cmp_3s_vs_3z.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <p class="fig-caption reveal" id="cap-3s3z">
+      MACT (left) and MARIE (right) on <code>3s_vs_3z</code>, both winning. MACT's three policies
+      scored <strong>86.7%, 70.0%, 90.0%</strong>, a mean of <strong>82.2%</strong>
+      (paper: 82.5&thinsp;&plusmn;&thinsp;4.7).
+      MARIE scored <strong>96.7%</strong> (paper: 85.0&thinsp;&plusmn;&thinsp;16.4). MARIE leads here, as it does in the paper.
+      We include the case the method loses.
+    </p>
+  </div>
+</section>
+
+<!-- ABLATIONS -->
+<section id="ablations">
+  <div class="container-wide">
+    <span class="section-label">Ablations</span>
+    <h2 class="reveal">What actually drives the gain</h2>
+    <p class="reveal">
+      Three controlled studies on <code>3m</code>, <code>MMM</code> and <code>8m</code>, one factor
+      at a time with architecture, optimizer and protocol fixed.
+    </p>
+
+    <div class="abl-row reveal">
+      <figure class="abl-cell">
+        <img src="assets/plots/abl_k.svg" alt="Ablation over the AC-CPC horizon K, including the one-step K=1 control" loading="lazy" />
+        <figcaption class="fig-caption"><strong>Contrastive horizon.</strong> The one-step control <em>K</em>&nbsp;=&nbsp;1 learns, then
+        collapses. A degenerate one-step contrastive head does not explain the gains.
+        <em>K</em>&nbsp;=&nbsp;4, 8, 12 stay stable, and 8 gives the best trade-off between fast
+        learning and a high plateau.</figcaption>
+      </figure>
+      <figure class="abl-cell">
+        <img src="assets/plots/abl_noise.svg" alt="Ablation over positive-target augmentation noise on MMM" loading="lazy" />
+        <figcaption class="fig-caption"><strong>Augmented positive targets.</strong> On this harder heterogeneous map <em>no</em>
+        augmentation reaches the highest final win rate: <em>p</em>&nbsp;=&nbsp;0.03 lags, and
+        <em>p</em>&nbsp;=&nbsp;0.1 recovers late but stays below. Augmentation is a map-dependent
+        regularizer, not a universal gain. This ablation narrows the claim rather than
+        supporting it.</figcaption>
+      </figure>
+      <figure class="abl-cell">
+        <img src="assets/plots/abl_cond.svg" alt="Per-agent versus team-aggregated action conditioning" loading="lazy" />
+        <figcaption class="fig-caption"><strong>Per-agent vs. team-aggregated conditioning.</strong> Conditioning on each agent's own
+        action window lifts off earlier and finishes far higher, while the aggregated summary stays near
+        zero for most of training. Identity-agnostic pooling blurs who executed which manoeuvre.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- BIBTEX -->
+<section id="bibtex">
+  <div class="container">
+    <span class="section-label">Citation</span>
+    <h2 class="reveal">BibTeX</h2>
+<pre class="bibtex reveal">@article{kich2026mact,
+  title   = {Action-Conditioned Transformers for Decentralized Multi-Agent World Models},
+  author  = {Kich, Victor A. and de Jesus, Junior C. and Yamamori, Satoshi and Morimoto, Jun},
+  journal = {Transactions on Machine Learning Research (TMLR)},
+  year    = {2026},
+  issn    = {2835-8856},
+  url     = {https://openreview.net/forum?id=99nyrFfTJf}
+}</pre>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p><strong>Action-Conditioned Transformers for Decentralized Multi-Agent World Models</strong></p>
+  <p>Accepted at Transactions on Machine Learning Research (TMLR).
+     Code: <a href="https://github.com/victorkich/MACT" target="_blank" rel="noopener">github.com/victorkich/MACT</a></p>
+</footer>
+
+<!-- SCROLL OBSERVER -->
+<script>
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("visible"); revealObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll(".reveal").forEach(el => revealObs.observe(el));
+
+  // Safari does not honour HTTP Range Requests on some static hosts, which blocks
+  // video playback entirely. Fetching as a Blob and using an object URL bypasses it.
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const blobCache = new Map();
+
+  function originalSrc(video) {
+    const s = video.querySelector("source");
+    return s ? s.getAttribute("src") : video.getAttribute("src");
+  }
+
+  async function prepareAndPlay(video) {
+    if (isSafari && !video.dataset.blobReady) {
+      const src = originalSrc(video);
+      try {
+        let url = blobCache.get(src);
+        if (!url) {
+          const resp = await fetch(src);
+          url = URL.createObjectURL(await resp.blob());
+          blobCache.set(src, url);
+        }
+        video.src = url;
+        video.dataset.blobReady = "1";
+        video.load();
+      } catch (err) {
+        if (video.readyState === 0) video.load();
+      }
+    } else if (video.readyState === 0) {
+      video.load();
+    }
+    video.play().catch(() => {});
+  }
+
+  const videoObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => e.isIntersecting ? prepareAndPlay(e.target) : e.target.pause());
+  }, { threshold: 0.25 });
+
+  document.querySelectorAll("video").forEach(v => {
+    v.muted = true;
+    if (v.hasAttribute("autoplay")) { if (isSafari) prepareAndPlay(v); }
+    else videoObs.observe(v);
+  });
+
+  // Cursor-following zoom
+  document.querySelectorAll(".video-wrap, .hero-video-wrap").forEach(wrap => {
+    const video = wrap.querySelector("video");
+    if (!video) return;
+    const scale = wrap.classList.contains("hero-video-wrap") ? 1.05 : 1.08;
+    wrap.addEventListener("mousemove", e => {
+      const r = wrap.getBoundingClientRect();
+      video.style.transformOrigin =
+        `${((e.clientX - r.left) / r.width * 100).toFixed(1)}% ${((e.clientY - r.top) / r.height * 100).toFixed(1)}%`;
+      video.style.transform = `scale(${scale})`;
+    });
+    wrap.addEventListener("mouseleave", () => {
+      video.style.transform = "";
+      video.style.transformOrigin = "center center";
+    });
+  });
+</script>
+
+</body>
+</html>
