@@ -3,7 +3,7 @@
 Action-Conditioned Transformers for Decentralized Multi-Agent World Models.
 Published in *Transactions on Machine Learning Research*, 2026.
 
-[Paper](https://openreview.net/forum?id=99nyrFfTJf) · [Project page](https://victorkich.github.io/MACT-page/)
+[Paper](https://openreview.net/forum?id=99nyrFfTJf) · [Project page](https://victorkich.github.io/MACT/)
 
 MACT is a decentralized transformer world model for cooperative MARL. Each agent processes
 discretized observation-action tokens with a shared transformer, one cross-agent Perceiver step
