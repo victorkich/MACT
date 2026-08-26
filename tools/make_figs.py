@@ -29,7 +29,10 @@ plt.rcParams.update({
     "axes.spines.right": False,
 })
 
-OUT = "/home/kich/MACT-page/assets/plots"
+import os as _os
+OUT = _os.environ.get("MACT_PLOTS_OUT",
+                      _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                                    "assets", "plots"))
 os.makedirs(OUT, exist_ok=True)
 
 METHODS = ["MACT", "MATWM", "MARIE", "MAMBA", "MBVD", "MAPPO"]
