@@ -138,12 +138,6 @@
     .d-arrow{ stroke: #94a3b8; stroke-width: 1.3; fill: none; }
     .d-arrow-a{ stroke: #1d4ed8; stroke-width: 1.5; fill: none; }
 
-    .callout {
-      border-left: 3px solid #1d4ed8; background: #f8faff; padding: 14px 18px;
-      margin: 26px 0 0; border-radius: 0 6px 6px 0;
-    }
-    .callout p { font-size: 14.5px; margin: 0; text-align: left; color: #374151; }
-
     .note {
       border-left: 3px solid #d97706; background: #fffbeb; padding: 14px 18px;
       margin: 22px 0 0; border-radius: 0 6px 6px 0;
@@ -264,7 +258,7 @@
     </div>
     <div class="affil reveal">
       <sup>1</sup>Department of Informatics, Kyoto University &nbsp;&middot;&nbsp;
-      <sup>2</sup>Department of Computer Science, Federal University of Rio Grande
+      <sup>2</sup>Centro de Ci&ecirc;ncias Computacionais, Universidade Federal do Rio Grande
     </div>
 
     <div class="btn-row reveal">
@@ -344,8 +338,8 @@
       </p>
       <p>
         MACT keeps the scalable pipeline and changes what the model is asked to predict. Each agent
-        must predict, in latent space, <strong>what its team-conditioned context will look like
-        <em>K</em> steps ahead, given the actions it intends to take</strong>.
+        must predict, in latent space, what its team-conditioned context will look like
+        <em>K</em> steps ahead, given the actions it intends to take.
       </p>
     </div>
 
@@ -365,22 +359,16 @@
       <p>
         For each horizon <em>k</em> the predictor sees the agent's local latent, its Perceiver
         context, and the action window it is about to execute, and must predict the projected
-        context <em>k</em> steps later. The target is a <strong>feature-dropout augmented</strong>
-        view of the future observation, intended to make the target less vulnerable to exact token
-        matching. The ablation below shows how map-dependent that actually is.
+        context <em>k</em> steps later. The target is a feature-dropout augmented view of the
+        future observation, intended to make the target less vulnerable to exact token matching,
+        and the ablation below shows how map-dependent that actually is.
       </p>
-    </div>
-
-    <p class="fig-caption reveal" style="text-align:left;max-width:760px;margin-left:0;">
-      In the figure above, the predictor is conditioned on the agent's <em>own</em> action window:
-      if I do this, in this team context, my future context looks like that.
-    </p>
-
-    <div class="callout reveal">
       <p>
-        <strong>Why per-agent conditioning?</strong> Team context already lives in the Perceiver
-        latent <code>e</code>. A pooled joint-action summary on top is redundant and
-        identity-agnostic, because it blurs <em>who</em> did what. The ablation below measures this.
+        Conditioning on the agent's <em>own</em> action window is what makes the objective
+        action-conditioned: if I do this, in this team context, my future context looks like that.
+        Team context already lives in the Perceiver latent <code>e</code>, so a pooled joint-action
+        summary on top is redundant and identity-agnostic, because it blurs <em>who</em> did what.
+        The ablation below measures that directly.
       </p>
     </div>
 
