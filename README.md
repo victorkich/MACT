@@ -99,7 +99,7 @@ frame to where the map is actually drawn so the view never wanders into off-map 
 ```bibtex
 @article{kich2026mact,
   title   = {Action-Conditioned Transformers for Decentralized Multi-Agent World Models},
-  author  = {Kich, Victor A. and de Jesus, Junior C. and Yamamori, Satoshi and Morimoto, Jun},
+  author  = {Kich, Victor A. and Yamamori, Satoshi and de Jesus, Junior C. and Morimoto, Jun},
   journal = {Transactions on Machine Learning Research (TMLR)},
   year    = {2026},
   issn    = {2835-8856},
